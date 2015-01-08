@@ -1,4 +1,9 @@
 #!/bin/bash -e
+# Usage: lsi-cards {machine-name} {mount-point}
+#
+# Example:
+#     ./lsi-cards host001 /data
+#
 
 CARDS=`lsblk -i -o KNAME,MODEL | grep NWD-BLP4-1600 | awk '{print $1}'`
 
