@@ -1,0 +1,42 @@
+#!/bin/bash -e
+
+CARDS=`lsblk -i -o KNAME,MODEL | grep NWD-BLP4-1600 | awk '{print $1}'`
+
+apt-get install -y mdadm
+
+for blockdev in $CARDS
+do
+  echo "Applying SSD settings to ${blockdev}"
+  echo noop | tee /sys/block/${blockdev}/queue/scheduler
+  echo 4096 | tee /sys/block/${blockdev}/queue/nr_requests
+  echo 1024 | tee /sys/block/${blockdev}/queue/max_sectors_kb
+  echo 1 | tee /sys/block/${blockdev}/queue/nomerges
+  echo 512 | tee /sys/block/${blockdev}/device/queue_depth
+done
+
+MACHINE_ID=${1}
+[ -z "$MACHINE_ID" ] && echo "error; machine ID should be passed in" && exit 1
+
+GFILE="/etc/${MACHINE_ID}.raid-setup"
+if [ -e "${GFILE}" ]
+then
+  echo "${GFILE} exists, raid already setup?"
+exit 1
+fi
+
+if [ -b "/dev/md0" ]
+then
+  mdadm --stop /dev/md0
+fi
+
+BLOCKS=""
+for blockdev in $CARDS
+do
+  BLOCKS="${BLOCKS} /dev/${blockdev}"
+done
+
+yes | mdadm --create --verbose -f /dev/md0 --level=stripe --raid-devices=2 ${BLOCKS}
+
+mkfs.ext4 /dev/md0
+
+touch /etc/${MACHINE_ID}.raid-setup

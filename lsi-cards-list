@@ -1,5 +1,0 @@
-#!/bin/bash -e
-#
-# TODO: improve this.
-#
-lsblk -i -o KNAME,MODEL | grep NWD-BLP4-1600 | awk '{print $1}'
