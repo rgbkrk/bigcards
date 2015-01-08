@@ -40,3 +40,11 @@ yes | mdadm --create --verbose -f /dev/md0 --level=stripe --raid-devices=2 ${BLO
 mkfs.ext4 /dev/md0
 
 touch /etc/${MACHINE_ID}.raid-setup
+
+
+MOUNT_POINT=${2}
+[ -z "$MOUNT_POINT" ] && echo "error; mount point should be passed as the second argument" && exit 1
+
+mkdir $MOUNT_POINT
+echo "UUID=`blkid -s UUID -o value /dev/md0`  $MOUNT_POINT ext4  noatime 0  0" >> /etc/fstab
+mount $MOUNT_POINT
